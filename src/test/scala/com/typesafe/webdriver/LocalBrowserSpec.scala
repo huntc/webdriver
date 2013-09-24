@@ -2,26 +2,22 @@ package com.typesafe.webdriver
 
 import org.junit.runner.RunWith
 import org.specs2.runner.JUnitRunner
-import org.specs2.mutable.{After, Specification}
+import org.specs2.mutable.Specification
 import akka.testkit._
-import akka.actor.{ActorRef, Kill, ActorSystem}
+import akka.actor.ActorRef
 import java.io.File
 import scala.concurrent.{Promise, Future}
-
-abstract class TestActorSystem extends TestKit(ActorSystem()) with After with ImplicitSender {
-  def after = system.shutdown()
-}
 
 // Note that this test will only run on Unix style environments where the "rm" command is available.
 @RunWith(classOf[JUnitRunner])
 class LocalBrowserSpec extends Specification {
 
   object TestWebDriverCommands extends WebDriverCommands {
-    def createSession(): Future[Int] = Promise.successful(123).future
+    def createSession(): Future[String] = Promise.successful("123").future
 
-    def destroySession(sessionId: Int) {}
+    def destroySession(sessionId: String) {}
 
-    def executeJs(sessionId: Int, file: File) {}
+    def executeJs(sessionId: String, script: String, args: String): Future[String] = Future.successful("")
   }
 
   "The local browser" should {
@@ -40,7 +36,7 @@ class LocalBrowserSpec extends Specification {
 
       localBrowser.stateName must_== LocalBrowser.Started
 
-      localBrowser ! Kill
+      localBrowser.stop()
 
       probe.expectTerminated(localBrowser)
 

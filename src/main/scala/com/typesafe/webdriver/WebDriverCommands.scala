@@ -1,29 +1,81 @@
 package com.typesafe.webdriver
 
 import scala.concurrent.Future
-import java.io.File
+import spray.http._
+
 
 /**
  * Encapsulates all of the request/reply commands that can be sent via the WebDriver protocol. All commands perform
  * asynchronously and are non-blocking.
  */
 abstract class WebDriverCommands {
-  def createSession(): Future[Int]
+  /**
+   * Start a session
+   * @return the future session id
+   */
+  def createSession(): Future[String]
 
-  def destroySession(sessionId: Int): Unit
+  /**
+   * Stop an established session.
+   * @param sessionId the session to stop.
+   */
+  def destroySession(sessionId: String): Unit
 
-  def executeJs(sessionId: Int, file: File)
+  /**
+   * Execute some JS code and return the status of execution
+   * @param sessionId the session
+   * @param script the script to execute
+   * @param args a json formatted string representing the arguments to pass to the script
+   * @return the return value of the script's execution
+   */
+  def executeJs(sessionId: String, script: String, args: String): Future[String]
 }
+
+import akka.actor.ActorSystem
 
 /**
  * Communicates with a web driver host via http and json.
  * @param host the host of the webdriver
  * @param port the port of the webdriver
  */
-class HttpWebDriverCommands(host: String, port: Int) extends WebDriverCommands{
-  def createSession(): Future[Int] = ???
+class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSystem) extends WebDriverCommands {
 
-  def destroySession(sessionId: Int) {}
+  import scala.concurrent.ExecutionContext.Implicits.global
+  import spray.client.pipelining._
+  import spray.json.DefaultJsonProtocol
+  import spray.httpx.SprayJsonSupport._
+  import spray.http.HttpRequest
+  import spray.http.HttpHeaders._
 
-  def executeJs(sessionId: Int, file: File) {}
+  private case class CommandResponse(sessionId: String, status: Int, value: String)
+
+  private object CommandProtocol extends DefaultJsonProtocol {
+    implicit val commandResponse = jsonFormat3(CommandResponse)
+  }
+
+  import CommandProtocol._
+
+  private val pipeline: HttpRequest => Future[CommandResponse] = (
+    addHeaders(
+      Host(host, port),
+      `Content-Type`(ContentTypes.`application/json`),
+      Accept(Seq(MediaTypes.`application/json`, MediaTypes.`image/png`))
+    )
+      ~> sendReceive
+      ~> unmarshal[CommandResponse]
+    )
+
+  def createSession(): Future[String] = {
+    pipeline(Post("/session")).withFilter(_.status == 0).map(_.sessionId)
+  }
+
+  def destroySession(sessionId: String) {
+    pipeline(Delete(s"/session/${sessionId}/window"))
+  }
+
+  def executeJs(sessionId: String, script: String, args: String): Future[String] = {
+    pipeline(Post(s"/session/${sessionId}/execute", s"""{"script":"${script}","args":"${args}"}"""))
+      .withFilter(_.status == 0)
+      .map(_.value)
+  }
 }

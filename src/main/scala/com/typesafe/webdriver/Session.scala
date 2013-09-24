@@ -16,7 +16,7 @@ import scala.util.{Failure, Success}
  */
 class Session(wd: WebDriverCommands, sessionConnectTimeout: FiniteDuration)
   extends Actor
-  with FSM[State, Option[Int]] {
+  with FSM[State, Option[String]] {
 
   startWith(Uninitialized, None)
 
@@ -39,14 +39,23 @@ class Session(wd: WebDriverCommands, sessionConnectTimeout: FiniteDuration)
       stop()
     }
     case Event(e: ExecuteJs, None) => {
-      self ! e
+      self forward e
       stay()
     }
   }
 
   when(Connected) {
     case Event(e: ExecuteJs, someSessionId@Some(_)) => {
-      someSessionId.foreach(wd.executeJs(_, e.jsFile))
+      val origSender = sender
+      someSessionId.foreach {
+        wd.executeJs(_, e.script, e.args).onComplete {
+          case Success(result) => origSender ! result
+          case Failure(t) => {
+            log.error("Stopping due to a problem executing commands - {}.", t)
+            stop()
+          }
+        }
+      }
       stay()
     }
   }
@@ -66,11 +75,11 @@ object Session {
   case object Connect
 
   /**
-   * Execute a JavaScript file given its location on the local file system.
-   * @param jsFile the location of the JS file.
+   * Execute JavaScript.
+   * @param script the js to execute.
+   * @param args the arguments to pass to the script.
    */
-  case class ExecuteJs(jsFile: File)
-
+  case class ExecuteJs(script: String, args: String)
 
   /**
    * A convenience for creating the actor.
@@ -81,7 +90,7 @@ object Session {
 
   // Internal messages
 
-  private[webdriver] case class SessionCreated(sessionId: Int)
+  private[webdriver] case class SessionCreated(sessionId: String)
 
 
   // Internal FSM states
