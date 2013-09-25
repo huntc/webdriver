@@ -19,3 +19,7 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2" % "2.2.2" % "test",
   "junit" % "junit" % "4.11" % "test"
 )
+
+lazy val root = project.in( file(".") )
+
+lazy val `webdriver-tester` = project.dependsOn(root)

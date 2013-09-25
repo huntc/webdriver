@@ -7,6 +7,7 @@ import scala.Some
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
+import spray.can.Http.ConnectionAttemptFailedException
 
 /**
  * Browsers maintain sessions for the purposes of our interactions with them. Sessions can be requested to do things
@@ -24,24 +25,34 @@ class Session(wd: WebDriverCommands, sessionConnectTimeout: FiniteDuration)
     case Event(Connect, None) =>
       wd.createSession().onComplete {
         case Success(sessionId) => self ! SessionCreated(sessionId)
-        case Failure(t) => {
+        case Failure(_: ConnectionAttemptFailedException) =>
+          log.debug("Initial connection attempt failed - retrying shortly.")
+          context.system.scheduler.scheduleOnce(500 milliseconds) {
+            self ! Connect
+          }
+        case Failure(t) =>
           log.error("Stopping due to not being able to establish a session - exception thrown - {}.", t)
           stop()
-        }
       }
       goto(Connecting) using None
   }
 
   when(Connecting, stateTimeout = sessionConnectTimeout) {
+    case Event(Connect, None) =>
+      wd.createSession().onComplete {
+        case Success(sessionId) => self ! SessionCreated(sessionId)
+        case Failure(t) =>
+          log.error("Stopping due to not being able to establish a session - exception thrown - {}.", t)
+          stop()
+      }
+      stay()
     case Event(SessionCreated(sessionId), None) => goto(Connected) using Some(sessionId)
-    case Event(StateTimeout, None) => {
+    case Event(StateTimeout, None) =>
       log.error("Stopping due to not being able to establish a session - timed out.")
       stop()
-    }
-    case Event(e: ExecuteJs, None) => {
+    case Event(e: ExecuteJs, None) =>
       self forward e
       stay()
-    }
   }
 
   when(Connected) {
@@ -50,10 +61,9 @@ class Session(wd: WebDriverCommands, sessionConnectTimeout: FiniteDuration)
       someSessionId.foreach {
         wd.executeJs(_, e.script, e.args).onComplete {
           case Success(result) => origSender ! result
-          case Failure(t) => {
+          case Failure(t) =>
             log.error("Stopping due to a problem executing commands - {}.", t)
             stop()
-          }
         }
       }
       stay()

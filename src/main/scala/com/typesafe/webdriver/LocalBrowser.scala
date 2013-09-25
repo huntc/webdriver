@@ -22,12 +22,11 @@ class LocalBrowser(sessionProps: Props, args: Seq[String]) extends Actor with FS
   }
 
   when(Started) {
-    case Event(CreateSession, Some(_)) => {
-      val session = context.actorOf(sessionProps)
+    case Event(CreateSession, Some(_)) =>
+      val session = context.actorOf(sessionProps, "session")
       session ! Session.Connect
       sender ! session
       stay()
-    }
   }
 
   onTermination {
@@ -67,6 +66,6 @@ object PhantomJs {
   def props(host: String = "127.0.0.1", port: Int = 8910)(implicit system: ActorSystem): Props = {
     val wd = new HttpWebDriverCommands(host, port)
     val args = Seq("phantomjs", s"--webdriver=${host}:${port}")
-    Props(classOf[LocalBrowser], wd, args)
+    Props(classOf[LocalBrowser], Session.props(wd), args)
   }
 }

@@ -1,8 +1,6 @@
 package com.typesafe.webdriver
 
 import scala.concurrent.Future
-import spray.http._
-
 
 /**
  * Encapsulates all of the request/reply commands that can be sent via the WebDriver protocol. All commands perform
@@ -42,12 +40,12 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
 
   import scala.concurrent.ExecutionContext.Implicits.global
   import spray.client.pipelining._
-  import spray.json.DefaultJsonProtocol
-  import spray.httpx.SprayJsonSupport._
-  import spray.http.HttpRequest
+  import spray.http._
   import spray.http.HttpHeaders._
+  import spray.httpx.SprayJsonSupport._
+  import spray.json.{DefaultJsonProtocol, JsValue}
 
-  private case class CommandResponse(sessionId: String, status: Int, value: String)
+  private case class CommandResponse(sessionId: String, status: Int, value: JsValue)
 
   private object CommandProtocol extends DefaultJsonProtocol {
     implicit val commandResponse = jsonFormat3(CommandResponse)
@@ -58,7 +56,6 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
   private val pipeline: HttpRequest => Future[CommandResponse] = (
     addHeaders(
       Host(host, port),
-      `Content-Type`(ContentTypes.`application/json`),
       Accept(Seq(MediaTypes.`application/json`, MediaTypes.`image/png`))
     )
       ~> sendReceive
@@ -66,7 +63,7 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
     )
 
   def createSession(): Future[String] = {
-    pipeline(Post("/session")).withFilter(_.status == 0).map(_.sessionId)
+    pipeline(Post("/session", """{"desiredCapabilities": {}}""")).withFilter(_.status == 0).map(_.sessionId)
   }
 
   def destroySession(sessionId: String) {
@@ -74,8 +71,8 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
   }
 
   def executeJs(sessionId: String, script: String, args: String): Future[String] = {
-    pipeline(Post(s"/session/${sessionId}/execute", s"""{"script":"${script}","args":"${args}"}"""))
+    pipeline(Post(s"/session/${sessionId}/execute", s"""{"script":"${script}","args":${args}}"""))
       .withFilter(_.status == 0)
-      .map(_.value)
+      .map(_.value.toString())
   }
 }
