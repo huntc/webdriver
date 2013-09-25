@@ -16,7 +16,7 @@ abstract class WebDriverCommands {
   def createSession(): Future[String]
 
   /**
-   * Stop an established session.
+   * Stop an established session. Performed on a best-effort basis.
    * @param sessionId the session to stop.
    */
   def destroySession(sessionId: String): Unit
@@ -25,7 +25,7 @@ abstract class WebDriverCommands {
    * Execute some JS code and return the status of execution
    * @param sessionId the session
    * @param script the script to execute
-   * @param args a json formatted string representing the arguments to pass to the script
+   * @param args a json formatted array string declaring the arguments to pass to the script
    * @return the return value of the script's execution
    */
   def executeJs(sessionId: String, script: String, args: String): Future[String]
