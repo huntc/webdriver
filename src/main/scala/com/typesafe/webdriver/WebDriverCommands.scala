@@ -1,6 +1,7 @@
 package com.typesafe.webdriver
 
 import scala.concurrent.Future
+import spray.json.{JsArray, JsValue}
 
 /**
  * Encapsulates all of the request/reply commands that can be sent via the WebDriver protocol. All commands perform
@@ -23,10 +24,10 @@ abstract class WebDriverCommands {
    * Execute some JS code and return the status of execution
    * @param sessionId the session
    * @param script the script to execute
-   * @param args a json formatted array string declaring the arguments to pass to the script
-   * @return the return value of the script's execution
+   * @param args a json array declaring the arguments to pass to the script
+   * @return the return value of the script's execution as a json value
    */
-  def executeJs(sessionId: String, script: String, args: String): Future[String]
+  def executeJs(sessionId: String, script: String, args: JsArray): Future[JsValue]
 }
 
 import akka.actor.ActorSystem
@@ -43,7 +44,7 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
   import spray.http._
   import spray.http.HttpHeaders._
   import spray.httpx.SprayJsonSupport._
-  import spray.json.{DefaultJsonProtocol, JsValue}
+  import spray.json.DefaultJsonProtocol
 
   private case class CommandResponse(sessionId: String, status: Int, value: JsValue)
 
@@ -70,9 +71,9 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
     pipeline(Delete(s"/session/${sessionId}/window"))
   }
 
-  def executeJs(sessionId: String, script: String, args: String): Future[String] = {
+  def executeJs(sessionId: String, script: String, args: JsArray): Future[JsValue] = {
     pipeline(Post(s"/session/${sessionId}/execute", s"""{"script":"${script}","args":${args}}"""))
       .withFilter(_.status == 0)
-      .map(_.value.toString())
+      .map(_.value)
   }
 }

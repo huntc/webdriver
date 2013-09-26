@@ -8,6 +8,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import spray.can.Http.ConnectionAttemptFailedException
+import spray.json.JsArray
 
 /**
  * Browsers maintain sessions for the purposes of our interactions with them. Sessions can be requested to do things
@@ -27,7 +28,7 @@ class Session(wd: WebDriverCommands, sessionConnectTimeout: FiniteDuration)
         case Success(sessionId) => self ! SessionCreated(sessionId)
         case Failure(_: ConnectionAttemptFailedException) =>
           log.debug("Initial connection attempt failed - retrying shortly.")
-          context.system.scheduler.scheduleOnce(500 milliseconds) {
+          context.system.scheduler.scheduleOnce(500.milliseconds) {
             self ! Connect
           }
         case Failure(t) =>
@@ -89,7 +90,7 @@ object Session {
    * @param script the js to execute.
    * @param args the arguments to pass to the script.
    */
-  case class ExecuteJs(script: String, args: String)
+  case class ExecuteJs(script: String, args: JsArray)
 
   /**
    * A convenience for creating the actor.

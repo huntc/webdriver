@@ -9,20 +9,25 @@ import scala.Some
  * Provides an Actor on behalf of a browser. Browsers are represented as operating system processes and are
  * communicated with by using the http/json based WebDriver protocol.
  * @param sessionProps the properties required in order to produce a session actor.
- * @param args a sequence of command line arguments used to launch the browser from the command line.
+ * @param maybeArgs a sequence of command line arguments used to launch the browser from the command line. If this is
+ *                  set to None then the process is deemed to be controlled outside of this actor.
  */
-class LocalBrowser(sessionProps: Props, args: Seq[String]) extends Actor with FSM[State, Option[Process]] {
+class LocalBrowser(sessionProps: Props, maybeArgs: Option[Seq[String]]) extends Actor with FSM[State, Option[Process]] {
 
   startWith(Uninitialized, None)
 
   when(Uninitialized) {
     case Event(Startup, None) =>
-      val p = Process(args).run(ProcessLogger(log.debug, log.error))
-      goto(Started) using Some(p)
+      maybeArgs match {
+        case Some(args) =>
+          val p = Process(args).run(ProcessLogger(log.debug, log.error))
+          goto(Started) using Some(p)
+        case None => goto(Started) using None
+      }
   }
 
   when(Started) {
-    case Event(CreateSession, Some(_)) =>
+    case Event(CreateSession, _) =>
       val session = context.actorOf(sessionProps, "session")
       session ! Session.Connect
       sender ! session
@@ -65,7 +70,7 @@ object LocalBrowser {
 object PhantomJs {
   def props(host: String = "127.0.0.1", port: Int = 8910)(implicit system: ActorSystem): Props = {
     val wd = new HttpWebDriverCommands(host, port)
-    val args = Seq("phantomjs", s"--webdriver=${host}:${port}")
+    val args = Some(Seq("phantomjs", s"--webdriver=${host}:${port}"))
     Props(classOf[LocalBrowser], Session.props(wd), args)
   }
 }

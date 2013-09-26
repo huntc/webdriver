@@ -6,6 +6,7 @@ import org.specs2.mutable.Specification
 import scala.concurrent.{Await, Promise, Future}
 import scala.concurrent.duration._
 import org.specs2.time.NoTimeConversions
+import spray.json.{JsString, JsValue, JsArray}
 
 @RunWith(classOf[JUnitRunner])
 class SessionSpec extends Specification with NoTimeConversions {
@@ -18,7 +19,7 @@ class SessionSpec extends Specification with NoTimeConversions {
 
     def destroySession(sessionId: String) {}
 
-    def executeJs(sessionId: String, script: String, args: String): Future[String] = Future.successful("hi")
+    def executeJs(sessionId: String, script: String, args: JsArray): Future[JsValue] = Future.successful(JsString("hi"))
   }
 
   "A session" should {
@@ -30,13 +31,13 @@ class SessionSpec extends Specification with NoTimeConversions {
 
       session ! Session.Connect
 
-      session ! Session.ExecuteJs("", "")
+      session ! Session.ExecuteJs("", JsArray())
 
       wd.p.success("123")
 
       Await.ready(wd.f, 2.seconds)
 
-      expectMsg("hi")
+      expectMsg(JsString("hi"))
 
     }
   }
