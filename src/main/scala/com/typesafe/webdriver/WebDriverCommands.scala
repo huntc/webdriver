@@ -68,11 +68,11 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
   }
 
   def destroySession(sessionId: String) {
-    pipeline(Delete(s"/session/${sessionId}/window"))
+    pipeline(Delete(s"/session/$sessionId/window"))
   }
 
   def executeJs(sessionId: String, script: String, args: JsArray): Future[JsValue] = {
-    pipeline(Post(s"/session/${sessionId}/execute", s"""{"script":"${script}","args":${args}}"""))
+    pipeline(Post(s"/session/$sessionId/execute", s"""{"script":"$script","args":$args}"""))
       .withFilter(_.status == 0)
       .map(_.value)
   }

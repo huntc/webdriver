@@ -1,7 +1,6 @@
 package com.typesafe.webdriver
 
 import akka.actor.{FSM, Props, Actor}
-import java.io.File
 import com.typesafe.webdriver.Session._
 import scala.Some
 import scala.concurrent.duration._

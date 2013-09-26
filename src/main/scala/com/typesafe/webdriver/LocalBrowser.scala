@@ -70,7 +70,7 @@ object LocalBrowser {
 object PhantomJs {
   def props(host: String = "127.0.0.1", port: Int = 8910)(implicit system: ActorSystem): Props = {
     val wd = new HttpWebDriverCommands(host, port)
-    val args = Some(Seq("phantomjs", s"--webdriver=${host}:${port}"))
+    val args = Some(Seq("phantomjs", s"--webdriver=$host:$port"))
     Props(classOf[LocalBrowser], Session.props(wd), args)
   }
 }
