@@ -13,11 +13,11 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.2.1",
-  "com.typesafe.akka" %% "akka-testkit" % "2.2.1",
   "io.spray" % "spray-client" % "1.2-20130912",
   "io.spray" %% "spray-json" % "1.2.5",
   "org.specs2" %% "specs2" % "2.2.2" % "test",
-  "junit" % "junit" % "4.11" % "test"
+  "junit" % "junit" % "4.11" % "test",
+  "com.typesafe.akka" %% "akka-testkit" % "2.2.1" % "test"
 )
 
 lazy val root = project.in( file(".") )
