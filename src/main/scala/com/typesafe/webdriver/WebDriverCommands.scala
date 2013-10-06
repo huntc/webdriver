@@ -1,7 +1,7 @@
 package com.typesafe.webdriver
 
 import scala.concurrent.Future
-import spray.json.{JsArray, JsValue}
+import spray.json.{JsString, JsArray, JsValue}
 
 /**
  * Encapsulates all of the request/reply commands that can be sent via the WebDriver protocol. All commands perform
@@ -72,7 +72,7 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
   }
 
   def executeJs(sessionId: String, script: String, args: JsArray): Future[JsValue] = {
-    pipeline(Post(s"/session/$sessionId/execute", s"""{"script":"$script","args":$args}"""))
+    pipeline(Post(s"/session/$sessionId/execute", s"""{"script":${JsString(script)},"args":$args}"""))
       .withFilter(_.status == 0)
       .map(_.value)
   }
