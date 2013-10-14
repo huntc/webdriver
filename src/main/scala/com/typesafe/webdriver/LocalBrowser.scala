@@ -35,7 +35,8 @@ class LocalBrowser(sessionProps: Props, maybeArgs: Option[Seq[String]]) extends 
   }
 
   onTermination {
-    case StopEvent(_, _, maybeProcess) => maybeProcess.foreach(p => p.destroy())
+    case StopEvent(_, _, maybeProcess) =>
+      maybeProcess.foreach(p => p.destroy())
   }
 
   initialize()

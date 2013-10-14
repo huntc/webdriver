@@ -2,10 +2,12 @@ package com.typesafe.webdriver.sbt
 
 import sbt._
 import sbt.Keys._
-import akka.actor.{ActorSystem, ActorRef, PoisonPill}
+import akka.actor.{ActorSystem, ActorRef}
+import akka.pattern.gracefulStop
 import com.typesafe.webdriver.{LocalBrowser, PhantomJs}
 import akka.util.Timeout
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 /**
  * Declares the main parts of a WebDriver based plugin for sbt.
@@ -45,32 +47,38 @@ abstract class WebDriverPlugin extends sbt.Plugin {
   private val browserAttrKey = AttributeKey[ActorRef]("browser")
   private val browserOwnerAttrKey = AttributeKey[WebDriverPlugin]("browser-owner")
 
-  // The basic assumption here is that onLoad and onUnload will only ever call one callback at a time.
-  override val globalSettings: Seq[Setting[_]] = Seq(
-    onLoad in Global := (onLoad in Global).value andThen {
-      state: State =>
-        state.get(browserOwnerAttrKey) match {
-          case None => {
-            val browser = system.actorOf(PhantomJs.props(), "localBrowser")
-            browser ! LocalBrowser.Startup
-            state.put(browserAttrKey, browser).put(browserOwnerAttrKey, this)
-            // FIXME: Need to install a shutdown hook so that the browser can be killed.
-          }
-          case _ => state
-        }
-    },
-
-    onUnload in Global := (onUnload in Global).value andThen {
-      state: State =>
-        state.get(browserOwnerAttrKey) match {
-          case Some(browserOwner: WebDriverPlugin) if browserOwner eq this =>
-            val browser = state.get(browserAttrKey)
-            browser.foreach(_ ! PoisonPill)
-            state.remove(browserAttrKey)
-          // FIXME: Uninstall the shutdown hook here.
-          case _ => state
-        }
+  private def load(state: State): State = {
+    state.get(browserOwnerAttrKey) match {
+      case None => {
+        val browser = system.actorOf(PhantomJs.props(), "localBrowser")
+        browser ! LocalBrowser.Startup
+        val newState = state.put(browserAttrKey, browser).put(browserOwnerAttrKey, this)
+        newState.addExitHook(unload(newState))
+      }
+      case _ => state
     }
+  }
+
+  private def unload(state: State): State = {
+    state.get(browserOwnerAttrKey) match {
+      case Some(browserOwner: WebDriverPlugin) if browserOwner eq this =>
+        state.get(browserAttrKey).foreach {
+          browser =>
+            try {
+              val stopped: Future[Boolean] = gracefulStop(browser, 250.millis)
+              Await.result(stopped, 500.millis)
+            } catch {
+              case _: Throwable =>
+            }
+        }
+        state.remove(browserAttrKey).remove(browserOwnerAttrKey)
+      case _ => state
+    }
+  }
+
+  override val globalSettings: Seq[Setting[_]] = Seq(
+    onLoad in Global := (onLoad in Global).value andThen (load),
+    onUnload in Global := (onUnload in Global).value andThen (unload)
   )
 
   /*
