@@ -16,6 +16,7 @@ object Main {
 
     system.scheduler.scheduleOnce(7.seconds) {
       system.shutdown()
+      System.exit(1)
     }
 
     val browser = system.actorOf(PhantomJs.props(), "localBrowser")
@@ -26,6 +27,7 @@ object Main {
     ) yield {
       println(result)
       system.shutdown()
+      System.exit(0)
     }
 
   }

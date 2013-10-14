@@ -22,4 +22,6 @@ libraryDependencies ++= Seq(
 
 lazy val root = project.in( file(".") )
 
+lazy val `webdriver-sbt` = project.dependsOn(root)
+
 lazy val `webdriver-tester` = project.dependsOn(root)
