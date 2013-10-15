@@ -15,7 +15,7 @@ import scala.concurrent.{Await, Future}
 abstract class WebDriverPlugin extends sbt.Plugin {
 
   object WebDriverKeys {
-    val browser = TaskKey[ActorRef]("browser", "An actor representing the webdriver browser.")
+    val webBrowser = TaskKey[ActorRef]("web-browser", "An actor representing the webdriver browser.")
     val JavaScript = config("js")
     val JavaScriptTest = config("js-test")
     val jsSource = SettingKey[File]("js-source", "The main source directory for JavaScript.")
@@ -29,11 +29,11 @@ abstract class WebDriverPlugin extends sbt.Plugin {
     (sourceDirectory * (includeFilter -- excludeFilter)).get
 
   def webDriverSettings = Seq(
-    browser in JavaScript <<= (state) map (_.get(browserAttrKey).get),
+    webBrowser <<= (state) map (_.get(browserAttrKey).get),
     jsSource in JavaScript := (sourceDirectory in Compile).value / "js",
     jsSource in JavaScriptTest := (sourceDirectory in Test).value / "js",
-    parallelism in JavaScript := java.lang.Runtime.getRuntime.availableProcessors() + 1,
-    reporter in JavaScript := new LoggerReporter(5, streams.value.log),
+    parallelism := java.lang.Runtime.getRuntime.availableProcessors() + 1,
+    reporter := new LoggerReporter(5, streams.value.log),
     includeFilter in JavaScript := GlobFilter("*.js"),
     includeFilter in JavaScriptTest := GlobFilter("*Test.js") | GlobFilter("*Spec.js"),
     sources in JavaScript <<= (jsSource in JavaScript, includeFilter in JavaScript, excludeFilter in JavaScript) map (locateSources),
@@ -44,8 +44,8 @@ abstract class WebDriverPlugin extends sbt.Plugin {
   implicit val system = withActorClassloader(ActorSystem("webdriver-system"))
   implicit val timeout = Timeout(5.seconds)
 
-  private val browserAttrKey = AttributeKey[ActorRef]("browser")
-  private val browserOwnerAttrKey = AttributeKey[WebDriverPlugin]("browser-owner")
+  private val browserAttrKey = AttributeKey[ActorRef]("web-browser")
+  private val browserOwnerAttrKey = AttributeKey[WebDriverPlugin]("web-browser-owner")
 
   private def load(state: State): State = {
     state.get(browserOwnerAttrKey) match {
