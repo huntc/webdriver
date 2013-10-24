@@ -15,12 +15,12 @@ import scala.concurrent.{Await, Future}
 abstract class WebDriverPlugin extends sbt.Plugin {
 
   object WebDriverKeys {
-    val webBrowser = TaskKey[ActorRef]("web-browser", "An actor representing the webdriver browser.")
+    val webBrowser = TaskKey[ActorRef]("js-web-browser", "An actor representing the webdriver browser.")
     val JavaScript = config("js")
     val JavaScriptTest = config("js-test")
     val jsSource = SettingKey[File]("js-source", "The main source directory for JavaScript.")
-    val parallelism = SettingKey[Int]("parallelism", "The number of parallel tasks for the webdriver host. Defaults to the # of available processors + 1 to keep things busy.")
-    val reporter = TaskKey[LoggerReporter]("reporter", "The reporter to use for conveying processing results.")
+    val parallelism = SettingKey[Int]("js-parallelism", "The number of parallel tasks for the webdriver host. Defaults to the # of available processors + 1 to keep things busy.")
+    val reporter = TaskKey[LoggerReporter]("js-reporter", "The reporter to use for conveying processing results.")
   }
 
   import WebDriverKeys._
