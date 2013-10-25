@@ -1,6 +1,6 @@
 organization := "com.typesafe"
 
-name := "webdriver"
+name := "webdriver-root"
 
 version := "1.0.0-SNAPSHOT"
 
@@ -11,17 +11,11 @@ resolvers ++= Seq(
   "spray repo" at "http://repo.spray.io/"
   )
 
-libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-actor" % "2.2.1",
-  "io.spray" % "spray-client" % "1.2-20130912",
-  "io.spray" %% "spray-json" % "1.2.5",
-  "org.specs2" %% "specs2" % "2.2.2" % "test",
-  "junit" % "junit" % "4.11" % "test",
-  "com.typesafe.akka" %% "akka-testkit" % "2.2.1" % "test"
-)
 
-lazy val root = project.in( file(".") )
+lazy val root = project.in( file(".") ).aggregate(webdriver, `webdriver-sbt`, `webdriver-tester`)
 
-lazy val `webdriver-sbt` = project.dependsOn(root)
+lazy val webdriver = project
 
-lazy val `webdriver-tester` = project.dependsOn(root)
+lazy val `webdriver-sbt` = project.dependsOn(webdriver)
+
+lazy val `webdriver-tester` = project.dependsOn(webdriver)
