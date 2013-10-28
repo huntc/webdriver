@@ -28,7 +28,7 @@ class LocalBrowser(sessionProps: Props, maybeArgs: Option[Seq[String]]) extends 
 
   when(Started) {
     case Event(CreateSession, _) =>
-      val session = context.actorOf(sessionProps, "session")
+      val session = context.actorOf(sessionProps)
       session ! Session.Connect
       sender ! session
       stay()
