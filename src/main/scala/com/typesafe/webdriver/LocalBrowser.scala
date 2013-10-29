@@ -75,3 +75,13 @@ object PhantomJs {
     Props(classOf[LocalBrowser], Session.props(wd), args)
   }
 }
+
+/**
+ * Used to manage a JVM resident browser via HtmlUnit.
+ */
+object HtmlUnit {
+  def props()(implicit system: ActorSystem): Props = {
+    val wd = new HtmlUnitWebDriverCommands()
+    Props(classOf[LocalBrowser], Session.props(wd))
+  }
+}
