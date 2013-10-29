@@ -7,6 +7,7 @@ import scala.concurrent.{Await, Promise, Future}
 import scala.concurrent.duration._
 import org.specs2.time.NoTimeConversions
 import spray.json.{JsString, JsValue, JsArray}
+import com.typesafe.webdriver.WebDriverCommands.WebDriverError
 
 @RunWith(classOf[JUnitRunner])
 class SessionSpec extends Specification with NoTimeConversions {
@@ -19,7 +20,8 @@ class SessionSpec extends Specification with NoTimeConversions {
 
     def destroySession(sessionId: String) {}
 
-    def executeJs(sessionId: String, script: String, args: JsArray): Future[JsValue] = Future.successful(JsString("hi"))
+    def executeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]] =
+      Future.successful(Right(JsString("hi")))
   }
 
   "A session" should {
