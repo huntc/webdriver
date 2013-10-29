@@ -60,8 +60,10 @@ class Session(wd: WebDriverCommands, sessionConnectTimeout: FiniteDuration)
       val origSender = sender
       someSessionId.foreach {
         wd.executeJs(_, e.script, e.args).onComplete {
-          case Success(result) => origSender ! result
+          case Success(Right(result)) => origSender ! result
+          case Success(Left(error)) => origSender ! akka.actor.Status.Failure(error.toException)
           case Failure(t) =>
+            origSender ! akka.actor.Status.Failure(t)
             log.error("Stopping due to a problem executing commands - {}.", t)
             stop()
         }
