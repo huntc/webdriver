@@ -133,8 +133,8 @@ object WebDriverCommands {
    *                   that was thrown when the command failed. The zeroeth element of the array represents the top of
    *                   the stack.
    */
-  final case class WebDriverErrorDetails(message: String, screen: Option[String], `class`: Option[String],
-                                         stackTrace: Option[Seq[StackTraceElement]])
+  final case class WebDriverErrorDetails(message: String, screen: Option[String] = None, `class`: Option[String] = None,
+                                         stackTrace: Option[Seq[StackTraceElement]] = None)
 
   /**
    * A WebDriver exception.
