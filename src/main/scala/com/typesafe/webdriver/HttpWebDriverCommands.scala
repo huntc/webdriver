@@ -75,7 +75,8 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
   }
 
   override def executeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]] = {
-    pipeline(Post(s"/session/$sessionId/execute", s"""{"script":${JsString(script)},"args":$args}""")).map {
+    pipeline(Post(s"/session/$sessionId/execute", s"""{"script":${JsString(s"$script;return result;")},"args":$args}"""))
+      .map {
       response =>
         if (response.status == Errors.Success) {
           Right(response.value)

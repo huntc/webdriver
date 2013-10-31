@@ -1,6 +1,6 @@
 package com.typesafe.webdriver
 
-import com.gargoylesoftware.htmlunit.WebClient
+import com.gargoylesoftware.htmlunit.{BrowserVersion, WebClient}
 import scala.collection.concurrent.TrieMap
 import java.util.UUID
 import com.gargoylesoftware.htmlunit.html.HtmlPage
@@ -17,7 +17,8 @@ class HtmlUnitWebDriverCommands() extends WebDriverCommands {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   override def createSession(): Future[String] = {
-    val webClient = new WebClient()
+    // We like Chrome for no particular reason than its JS is modern. FF may also be a good choice.
+    val webClient = new WebClient(BrowserVersion.CHROME)
     val page: HtmlPage = webClient.getPage(WebClient.ABOUT_BLANK)
     val sessionId = UUID.randomUUID().toString
     sessions.put(sessionId, page)
@@ -32,8 +33,10 @@ class HtmlUnitWebDriverCommands() extends WebDriverCommands {
     sessions.get(sessionId).map({
       page =>
         Future {
-          val scriptWithArgs = s"""|var args = JSON.parse('${args.toString().replaceAll("'", "\\'")}');
+          val escapedJsonArgs = args.toString().replaceAll("'", "\\'").replaceAll("""\\""", """\\\\""")
+          val scriptWithArgs = s"""|var arguments = JSON.parse('$escapedJsonArgs');
                                    |$script
+                                   |result;
                                    |""".stripMargin
           try {
             val scriptResult = page.executeJavaScript(scriptWithArgs)

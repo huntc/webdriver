@@ -31,7 +31,7 @@ class HtmlUnitWebDriverCommandsSpec extends Specification with NoDurationConvers
   def testFor(v: JsValue): MatchResult[Any] = {
     val result = withSession {
       (commands, sessionId) =>
-        commands.executeJs(sessionId, "args[0];", JsArray(v))
+        commands.executeJs(sessionId, "var result = arguments[0];", JsArray(v))
     }
     Await.result(result, Duration(1, SECONDS)) must_== Right(v)
   }
@@ -48,13 +48,13 @@ class HtmlUnitWebDriverCommandsSpec extends Specification with NoDurationConvers
       val commands = new HtmlUnitWebDriverCommands()
       val maybeSession = commands.createSession().map {
         sessionId =>
-          commands.executeJs(sessionId, "args[0];", JsArray(JsNumber(1)))
+          commands.executeJs(sessionId, "var result = arguments[0];", JsArray(JsNumber(1)))
             .flatMap {
             r =>
               import DefaultJsonProtocol._
               val result = commands.executeJs(
                 sessionId,
-                "args[0];",
+                "var result = arguments[0];",
                 JsArray(JsNumber(2)))
               result.onComplete {
                 case _ =>
@@ -71,7 +71,7 @@ class HtmlUnitWebDriverCommandsSpec extends Specification with NoDurationConvers
 
   "should fail executing js without a session" in {
     val commands = new HtmlUnitWebDriverCommands()
-    val result = commands.executeJs("rubbish", "args[0];", JsArray(JsNumber(1)))
+    val result = commands.executeJs("rubbish", "var result = arguments[0];", JsArray(JsNumber(1)))
     Await.result(result, Duration(1, SECONDS)) must_==
       Left(WebDriverError(Errors.NoSuchDriver, WebDriverErrorDetails("Cannot locate sessionId")))
   }
