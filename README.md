@@ -13,6 +13,11 @@ driven, providing a resilient implementation by leveraging Akka in particular. O
 that many WebDriver requests can be executed in parallel e.g. several JavaScript programs can be run
 simultaneously.
 
+In addition to the reactive network client, support for [HtmlUnit](http://htmlunit.sourceforge.net/) is provided.
+HtmlUnit provides a browser environment to [Mozilla's Rhino](https://developer.mozilla.org/en/docs/Rhino) and
+executes entirely within the JVM. The consequence of this is that no other browser is required to be installed.
+The cost is one of performance given that Rhino is not faster than a native browser.
+
 Sample usage can be obtained by inspecting the webdriver-tester sub-project. There's a main class that
 illustrates essential interactions. Here is a snippet of it:
 
