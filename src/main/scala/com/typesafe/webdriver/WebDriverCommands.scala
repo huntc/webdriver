@@ -22,7 +22,9 @@ abstract class WebDriverCommands {
   def destroySession(sessionId: String): Unit
 
   /**
-   * Execute some JS code and return the status of execution
+   * Execute some JS code and return the status of execution. Any args are passed to the script as args[]. The
+   * script must also declare a result as a variable e.g. <pre>var result = "some result";</pre>. This result
+   * variable will be looked for in the global scope and errors will occur if it is not found.
    * @param sessionId the session
    * @param script the script to execute
    * @param args a json array declaring the arguments to pass to the script

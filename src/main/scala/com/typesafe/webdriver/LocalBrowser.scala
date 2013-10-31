@@ -82,6 +82,6 @@ object PhantomJs {
 object HtmlUnit {
   def props()(implicit system: ActorSystem): Props = {
     val wd = new HtmlUnitWebDriverCommands()
-    Props(classOf[LocalBrowser], Session.props(wd))
+    Props(classOf[LocalBrowser], Session.props(wd), None)
   }
 }
