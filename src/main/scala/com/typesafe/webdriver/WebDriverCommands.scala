@@ -31,6 +31,21 @@ abstract class WebDriverCommands {
    * @return the return value of the script's execution as a json value
    */
   def executeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]]
+
+  /**
+   * Similar to [[com.typesafe.webdriver.WebDriverCommands.executeJs]], this method executes JavaScript code.
+   * However the code is executed directly on the JavaScript engine. What this actually means will depend on
+   * the underlying JavaScript engine. In the case of PhantomJS for example, the full PhantomJS API is available.
+   * For HtmlUnit the underlying JavaScript engine (at this time, Rhino) will be available. The implementation
+   * of this method is entirely optional. If a particular type of Browser does not support it then an error will
+   * be returned.
+   * @param sessionId the session
+   * @param script the script to execute
+   * @param args a json array declaring the arguments to pass to the script
+   * @return the return value of the script's execution as a json value
+   */
+  def executeNativeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]]
+
 }
 
 object WebDriverCommands {

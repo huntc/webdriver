@@ -21,7 +21,7 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
   import spray.json.DefaultJsonProtocol
   import spray.httpx.PipelineException
 
-  private case class CommandResponse(sessionId: String, status: Int, value: JsValue)
+  protected case class CommandResponse(sessionId: String, status: Int, value: JsValue)
 
   private object CommandProtocol extends DefaultJsonProtocol {
     implicit val commandResponse = jsonFormat3(CommandResponse)
@@ -57,7 +57,7 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
 
   import CommandProtocol._
 
-  private val pipeline: HttpRequest => Future[CommandResponse] = (
+  protected val pipeline: HttpRequest => Future[CommandResponse] = (
     addHeaders(
       Host(host, port),
       Accept(Seq(MediaTypes.`application/json`, MediaTypes.`image/png`))
@@ -65,6 +65,14 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
       ~> sendReceive
       ~> unmarshalIgnoreStatus[CommandResponse]
     )
+
+  protected def toEitherErrorOrValue(response: CommandResponse): Either[WebDriverError, JsValue] = {
+    if (response.status == Errors.Success) {
+      Right(response.value)
+    } else {
+      Left(WebDriverError(response.status, response.value.convertTo[WebDriverErrorDetails]))
+    }
+  }
 
   override def createSession(): Future[String] = {
     pipeline(Post("/session", """{"desiredCapabilities": {}}""")).withFilter(_.status == 0).map(_.sessionId)
@@ -76,13 +84,10 @@ class HttpWebDriverCommands(host: String, port: Int)(implicit system: ActorSyste
 
   override def executeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]] = {
     pipeline(Post(s"/session/$sessionId/execute", s"""{"script":${JsString(s"$script;return result;")},"args":$args}"""))
-      .map {
-      response =>
-        if (response.status == Errors.Success) {
-          Right(response.value)
-        } else {
-          Left(WebDriverError(response.status, response.value.convertTo[WebDriverErrorDetails]))
-        }
-    }
+      .map(toEitherErrorOrValue)
+  }
+
+  override def executeNativeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]] = {
+    Future.successful(Left(WebDriverError(Errors.UnknownError, WebDriverErrorDetails("Unsupported operation"))))
   }
 }

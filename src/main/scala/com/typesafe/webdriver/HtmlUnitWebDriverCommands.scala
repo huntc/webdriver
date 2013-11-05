@@ -9,7 +9,7 @@ import spray.json._
 import com.typesafe.webdriver.WebDriverCommands.{WebDriverErrorDetails, Errors, WebDriverError}
 
 /**
- * Runs webdriver command in the context of the JVM ala HtmlUnit.
+ * Runs WebDriver command in the context of the JVM ala HtmlUnit.
  */
 class HtmlUnitWebDriverCommands() extends WebDriverCommands {
   val sessions = TrieMap[String, HtmlPage]()
@@ -62,5 +62,9 @@ class HtmlUnitWebDriverCommands() extends WebDriverCommands {
         }
     }).getOrElse(Future.successful(
       Left(WebDriverError(Errors.NoSuchDriver, WebDriverErrorDetails("Cannot locate sessionId")))))
+  }
+
+  override def executeNativeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]] = {
+    Future.successful(Left(WebDriverError(Errors.UnknownError, WebDriverErrorDetails("Unsupported operation"))))
   }
 }

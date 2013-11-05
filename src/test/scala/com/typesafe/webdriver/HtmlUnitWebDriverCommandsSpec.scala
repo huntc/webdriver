@@ -8,6 +8,7 @@ import org.specs2.mutable.Specification
 import org.specs2.time.NoDurationConversions
 import org.specs2.matcher.MatchResult
 import com.typesafe.webdriver.WebDriverCommands.{WebDriverErrorDetails, Errors, WebDriverError}
+import java.io.File
 
 @RunWith(classOf[JUnitRunner])
 class HtmlUnitWebDriverCommandsSpec extends Specification with NoDurationConversions {
@@ -84,4 +85,11 @@ class HtmlUnitWebDriverCommandsSpec extends Specification with NoDurationConvers
     Await.result(result, Duration(1, SECONDS)) must beLeft
   }
 
+  "Execute JS natively requesting a commonjs function should fail" in {
+    val result = withSession {
+      (commands, sessionId) =>
+        commands.executeNativeJs(sessionId, "var result = require('fs').separator;", JsArray())
+    }
+    Await.result(result, Duration(1, SECONDS)) must beLeft
+  }
 }

@@ -25,7 +25,7 @@ object Main {
     browser ! LocalBrowser.Startup
     for (
       session <- (browser ? LocalBrowser.CreateSession).mapTo[ActorRef];
-      result <- (session ? Session.ExecuteJs("return arguments[0]", JsArray(JsNumber(999)))).mapTo[JsNumber]
+      result <- (session ? Session.ExecuteNativeJs("return arguments[0]", JsArray(JsNumber(999)))).mapTo[JsNumber]
     ) yield {
       println(result)
 

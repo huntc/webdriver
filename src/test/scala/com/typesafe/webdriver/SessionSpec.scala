@@ -22,6 +22,10 @@ class SessionSpec extends Specification with NoTimeConversions {
 
     def executeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]] =
       Future.successful(Right(JsString("hi")))
+
+    override def executeNativeJs(sessionId: String, script: String, args: JsArray): Future[Either[WebDriverError, JsValue]] = {
+      throw new UnsupportedOperationException
+    }
   }
 
   "A session" should {
